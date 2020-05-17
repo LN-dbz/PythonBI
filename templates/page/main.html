@@ -1,12 +1,539 @@
-
 {% extends "base.html" %}
 {% block title %}Index{% endblock %}
 {% block head %}
-  {{ super() }}
-  
+{{ super() }}
+<style>
+    .data_tab {
+        background: #24273E;
+        color: #ffffff;
+        margin: 5px;
+    }
+
+    .vertical_div {
+        vertical-align: top;
+        display: inline-block;
+
+    }
+
+    .data_tab_svg {
+        width: 260px;
+        height: 140px;
+        text-align: center;
+        padding-top: 50px;
+    }
+
+    .data_tab_svg p {
+        font-size: 60px;
+    }
+</style>
+
 {% endblock %}
 {% block content %}
-  <h1>主页面 显示数据大盘</h1>
+<div style="margin: auto;width: 800px; ">
+    <form class="layui-form">
+
+        <div class="layui-form-item">
+            <div class="layui-inline">
+                <label class="layui-form-label">选择考试</label>
+                <div class="layui-input-inline" style="color: #24273E">
+                    <select name="exam_name" style="color: #24273E" id="exam_select"  lay-verify="required">
+                    </select>
+                </div>
+            </div>
+            <div class="layui-inline">
+                <button class="layui-btn" lay-submit="exam_infer" lay-filter="exam_infer">跳转</button>
+                <button class="layui-btn" lay-submit="exam_down" lay-filter="exam_down">下载</button>
+            </div>
+        </div>
+    </form>
+</div>
+<div style="text-align: center;">
+    <div>
+        <div id="main" style="width: 400px;height:390px;" class="data_tab vertical_div"></div>
+        <div class="vertical_div">
+            <div>
+                <div class="data_tab_svg data_tab vertical_div" name='language'>
+                    <span>语文</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+                <div class="data_tab_svg data_tab vertical_div" name='match'>
+                    <span>数学</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+                <div class="data_tab_svg data_tab vertical_div" name='english'>
+                    <span>英语</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+            </div>
+            <div>
+                <div class="data_tab_svg data_tab vertical_div" name='political'>
+                    <span>政治</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+                <div class="data_tab_svg data_tab vertical_div" name='biological'>
+                    <span>生物</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+                <div class="data_tab_svg data_tab vertical_div" name='history'>
+                    <span>历史</span>
+                    <p>
+                        34.5
+                    </p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div>
+        <div id="subject_svg_d" style="width: 605px;height:390px;" class="data_tab vertical_div"></div>
+        <div id="subject_difficulty" style="width: 605px;height:390px;" class="data_tab vertical_div"></div>
+    </div>
+    <div>
+        <div id="score_font_20" style="width: 505px;height:780px;" class="data_tab vertical_div"></div>
+        <div class="vertical_div">
+            <div id="subject_distributed" style="width: 705px;height:390px;" class="data_tab"></div>
+            <div id="subject_pph" style="width: 705px;height:390px;" class="data_tab"></div>
+
+        </div>
+    </div>
+</div>
 {% endblock %}
 {% block script %}
-    {% endblock script %}
+<script src={{url_for('static', filename='echarts.min.js')}}></script>
+<script type="text/javascript">
+    $.ajax({
+        type: "GET",
+        url: "/api/exam_list",
+        cache: false,
+        processData: false,
+        contentType: false,
+        success: function (data) {
+            for (v in data['data']) {
+                $('#exam_select').append('<option value="' + data['data'][v]['name'] + '">' + data['data'][v]['name'] + '</option>')
+            }
+            layui.use(['form', 'laydate'], function () {
+                var form = layui.form, laydate = layui.laydate;
+                form.on('submit(exam_infer)', function(data){
+                    exam_score_analysis(data.field.exam_name)
+                    return false; 
+                });
+                form.on('submit(exam_down)', function(data){
+                    window.open("../api/down/"+data.field.exam_name+".xlsx","_blank");   
+                    return false; 
+            });
+
+
+        
+    });
+            exam_score_analysis(data['data'][0]['name'])
+
+
+        },
+        error: function (e) {
+            console.log(e);
+        }
+    });
+
+    
+
+
+
+    function subject_pph(data_list, document_id) {
+        let myChart = echarts.init(document.getElementById(document_id));
+        option = {
+            title: {
+                text: '高分率、及格率、低分率',
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+            
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }
+            },
+            legend: {
+                data: ['低分率', '及格率', '高分率'],
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'value',
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                }
+            },
+            yAxis: {
+                type: 'category',
+                data: data_list['subject'],
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                }
+            },
+            series: [
+                {
+                    name: '低分率',
+                    type: 'bar',
+                    stack: '总量',
+                    label: {
+                        show: true,
+                        position: 'insideRight'
+                    },
+                    data: data_list['low']
+                },
+                {
+                    name: '及格率',
+                    type: 'bar',
+                    stack: '总量',
+                    label: {
+                        show: true,
+                        position: 'insideRight'
+                    },
+                    data: data_list['pass']
+                }
+                ,
+                {
+                    name: '高分率',
+                    type: 'bar',
+                    stack: '总量',
+                    label: {
+                        show: true,
+                        position: 'insideRight'
+                    },
+                    data: data_list['high']
+                }
+            ]
+        };
+        myChart.setOption(option);
+    }
+    function subject_distributed(data_list, document_id) {
+        let myChart = echarts.init(document.getElementById(document_id));
+        option = {
+            title: {
+                text: '成绩分布情况',
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'cross',
+                    label: {
+                        backgroundColor: '#6a7985'
+                    }
+                }
+            },
+            legend: {
+                data: data_list['subject']
+                , right: '1%'
+                , textStyle: {
+                    color: '#fff'
+                }
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {}
+                }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                containLabel: true
+            },
+            xAxis:
+            {
+                type: 'category',
+                boundaryGap: false,
+                data: data_list['distributed'],
+                axisLabel: {      // 坐标轴的标签 subject_distributed
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                },
+            },
+
+            yAxis: {
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                },
+            },
+            series: data_list['distributed_list']
+        };
+        myChart.setOption(option);
+    }
+
+    function score_font_20(data_list, document_id) {
+        let myChart = echarts.init(document.getElementById(document_id));
+        option = {
+            title: {
+                text: '前20名学生一览',
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+
+            xAxis: {
+                type: 'value',
+                boundaryGap: [0, 0.01],
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                }
+            },
+            yAxis: {
+                type: 'category',
+                data: data_list['name']
+                , axisLabel: {    // 坐标轴标签
+                    show: true,  // 是否显示
+                    inside: false, // 是否朝内
+                    rotate: 0, // 旋转角度
+                    margin: 5, // 刻度标签与轴线之间的距离
+                    color: '#ffffff'  // 默认取轴线的颜色 
+                }
+            },
+            series: [
+                {
+                    name: '成绩',
+                    type: 'bar',
+                    data: data_list['score']
+                    , textStyle: {
+                        color: '#ffffff'
+                    }
+                }
+            ]
+        };
+        myChart.setOption(option);
+    }
+    //难度系数与及格关联情况
+    function subject_difficulty(data_list, document_id) {
+        let myChart = echarts.init(document.getElementById(document_id));
+        // 指定图表的配置项和数据
+        let option = {
+            title: {
+                text: '难度系数与及格关联情况',
+                textStyle: {
+                    color: '#ffffff'
+                }
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+                data: ['及格人数', '难度系数', '平均值']
+                , right: '1%'
+                , textStyle: {
+                    color: '#fff'
+                }
+            },
+            xAxis: {
+                data: data_list['subject'],
+                axisLabel: {    // 坐标轴标签
+                    show: true,  // 是否显示
+                    inside: false, // 是否朝内
+                    rotate: 0, // 旋转角度
+                    margin: 5, // 刻度标签与轴线之间的距离
+                    color: '#ffffff'  // 默认取轴线的颜色 
+                },
+            },
+            yAxis: {
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                },
+            },
+            series: [{
+                name: '及格人数',
+                type: 'bar',
+                data: data_list['pass']
+            },
+            {
+                name: '难度系数',
+                type: 'line',
+                data: data_list['diff']
+            }, {
+                name: '平均值',
+                type: 'line',
+                data: data_list['svg']
+            }]
+        };
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+    }
+    //最高分，最低分，平均分 
+    function subject_svg_d(data_list, document_id) {
+        // let subject, a, b, c = [], [], [], []
+        // for(v in data_list){
+        //     subject.push(v)
+        // }
+        // data_list['subject'] = subject
+        // console.log(subject)
+        let myChart = echarts.init(document.getElementById(document_id));
+        // 指定图表的配置项和数据
+        let option = {
+            title: {
+                text: '平均分、最低分、最高分分布',
+                textStyle: {
+                    color: '#ffffff'
+                }
+
+            },
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: {
+                    type: 'shadow'
+                }
+            },
+            legend: {
+
+                data: ['平均分', '最低分', '最高分分布']
+                , right: '1%'
+                , textStyle: {
+                    color: '#fff'
+                }
+            },
+            xAxis: {
+                data: data_list['subject'],
+                axisLabel: {    // 坐标轴标签
+                    show: true,  // 是否显示
+                    inside: false, // 是否朝内
+                    rotate: 0, // 旋转角度
+                    margin: 5, // 刻度标签与轴线之间的距离
+                    color: '#ffffff'  // 默认取轴线的颜色 
+                }
+            },
+            yAxis: {
+                axisLabel: {      // 坐标轴的标签
+                    show: true,    // 是否显示
+                    inside: false,  // 是否朝内
+                    rotate: 0,     // 旋转角度
+                    margin: 8,     // 刻度标签与轴线之间的距离
+                    color: '#ffffff',  // 默认轴线的颜色
+                },
+            },
+            series: [{
+                name: '平均分',
+                type: 'bar',
+                data: data_list['平均分']
+            },
+            {
+                name: '最低分',
+                type: 'bar',
+                data: data_list['最低分']
+            }, {
+                name: '最高分',
+                type: 'bar',
+                data: data_list['最高分']
+            }]
+        };
+
+        // 使用刚指定的配置项和数据显示图表。
+        myChart.setOption(option);
+    }
+    // 平均总分
+    function subject_total_svg(svg, document_id) {
+        var myChart = echarts.init(document.getElementById(document_id));
+        option = {
+            title: {
+                text: '本次考试总分平均值',
+                textStyle: {
+                    color: '#ffffff'
+                }
+
+            },
+            tooltip: {
+                formatter: '本次考试平均值: {c}%'
+            },
+            toolbox: {
+                feature: {
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            series: [
+                {
+                    min: 0,
+                    max: 500,
+                    splitNumber: 20,
+                    type: 'gauge',
+                    color: '#ffffff',
+                    detail: { formatter: '{value}' },
+                    data: [{ value: svg }]
+                }
+            ]
+        }
+        myChart.setOption(option);
+    }
+
+
+    
+    function exam_score_analysis(exam_name){
+        $.ajax({
+            type: "GET",
+            url: "/api/exam_score_analysis",
+            data: {'exam_name':  exam_name},
+
+            success: function (data) {
+                for(v in data.subject_svg){
+                    $('.data_tab_svg[name='+v+'] p').text( data.subject_svg[v])
+                }
+                subject_total_svg(data.sum_svg, 'main')
+                subject_svg_d(data.subject_svg_d, 'subject_svg_d')
+                subject_difficulty(data.subject_difficulty, 'subject_difficulty')
+                subject_distributed(data.subject_distributed, 'subject_distributed')
+                subject_pph(data.subject_pph, 'subject_pph')
+                score_font_20(data.score_font_20, 'score_font_20')
+
+
+            },
+            error: function (e) {
+                console.log(e);
+            }
+        });
+    }
+</script>
+{% endblock script %}

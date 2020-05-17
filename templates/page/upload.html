@@ -5,7 +5,77 @@
   
 {% endblock %}
 {% block content %}
-  <h1>数据文件上传与管理页面</h1>
+<h3>数据文件上传与管理页面</h3>
+
+<div style="width:500px;margin:auto">
+    <form class="layui-form">
+        <div class="layui-form-item">
+            <label class="layui-form-label">考试名称</label>
+            <div class="layui-input-block">
+                <input type="text" name="examName" placeholder="考试名称" autocomplete="off" class="layui-input" lay-verify="required">
+            </div>
+        </div>
+            <div class="layui-form-item">
+            <label class="layui-form-label">成绩文件</label>
+            <div class="layui-input-block">
+                <input id="file_input"type="file" name="file" placeholder="请选择成绩文件" autocomplete="off" lay-verify="required">
+            </div>
+        </div>
+           <div class="layui-form-item">
+            <label class="layui-form-label">成绩文件</label>
+            <div class="layui-input-block">
+                        <input type="text" id="start_end" name="start_end" placeholder="考试名称" autocomplete="off" class="layui-input" lay-verify="required">
+
+<!--                <input id="file_input"type="file" name="file" placeholder="请选择成绩文件" autocomplete="off" lay-verify="required">-->
+            </div>
+        </div>
+      <div class="layui-form-item">
+        <div class="layui-input-block">
+          <button class="layui-btn" lay-submit lay-filter="*">立即提交</button>
+          <button type="reset" class="layui-btn layui-btn-primary">重置</button>
+        </div>
+      </div>
+    </form>
+</div>
+
+
+
 {% endblock %}
 {% block script %}
-    {% endblock script %}
+<script>
+layui.use(['form','laydate', 'layer'], function(){
+  var form = layui.form, laydate = layui.laydate, layer = layui.layer;
+  //日期时间范围选择
+laydate.render({
+  elem: '#start_end'
+  ,type: 'datetime'
+  ,range: true //或 range: '~' 来自定义分割字符
+});
+
+  //各种基于事件的操作，下面会有进一步介绍
+  form.on('submit(*)', function(data){
+    var post_data = new FormData();
+    var files = $('#file_input').prop('files');
+    post_data.append('file', files[0]);
+    post_data.append('examName', data.field.examName);
+    post_data.append('start_end', data.field.start_end);
+        $.ajax({
+             type: "POST",
+             url: "/api/upload",
+              data: post_data,
+                cache: false,
+                processData: false,
+                contentType: false,
+             success: function(data){
+              layer.msg(data.message)
+                         console.log(data);
+                      },
+             error:function(e){
+                         console.log(e);
+             }
+         });
+      return false; //阻止表单跳转。如果需要表单跳转，去掉这段即可。
+  });
+});
+</script>
+{% endblock %}
